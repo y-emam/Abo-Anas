@@ -10,6 +10,7 @@ class Config:
     FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
     FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
     FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+    FLASK_BASE_URL = os.getenv('FLASK_BASE_URL', 'https://your-ngrok-url.ngrok.io')
     
     # Eleven Labs Configuration
     ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
@@ -18,7 +19,11 @@ class Config:
     # Gemini AI Configuration
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     
-    # OpenAI Configuration (for Whisper)
+    # Google Cloud Speech-to-Text Configuration
+    GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')  # Path to service account JSON
+    GOOGLE_PROJECT_ID = os.getenv('GOOGLE_PROJECT_ID')
+    
+    # OpenAI Configuration (for Whisper) - Deprecated, keeping for backward compatibility
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     
     # Twilio Configuration

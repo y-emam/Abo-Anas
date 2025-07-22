@@ -1,20 +1,34 @@
 import requests
 import tempfile
 import os
-import openai
 from app.config import Config
+from app.services.google_speech_service import initialize_google_speech_service, get_google_speech_service
 from typing import Optional, Tuple
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SpeechService:
     """Service for handling speech-to-text and text-to-speech operations"""
     
     def __init__(self):
         self.elevenlabs_api_key = Config.ELEVENLABS_API_KEY
+        
+        # Initialize Google Speech service
+        try:
+            self.google_speech = initialize_google_speech_service(
+                credentials_path=Config.GOOGLE_APPLICATION_CREDENTIALS,
+                project_id=Config.GOOGLE_PROJECT_ID
+            )
+            logger.info("Google Speech-to-Text service initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize Google Speech service: {e}")
+            self.google_speech = None
     
     def transcribe_audio_from_url(self, audio_url: str) -> Optional[str]:
         """
         Transcribe audio from URL (Twilio recording)
-        Using OpenAI Whisper API or Google Speech-to-Text
+        Using Google Speech-to-Text API
         
         Args:
             audio_url (str): URL to audio file
@@ -23,6 +37,10 @@ class SpeechService:
             Optional[str]: Transcribed text or None if failed
         """
         try:
+            if not self.google_speech:
+                logger.error("Google Speech service not initialized")
+                return None
+            
             # Download audio file
             audio_data = self._download_audio(audio_url)
             if not audio_data:
@@ -34,8 +52,8 @@ class SpeechService:
                 temp_file_path = temp_file.name
             
             try:
-                # Use OpenAI Whisper API for transcription
-                transcription = self._transcribe_with_whisper(temp_file_path)
+                # Use Google Speech-to-Text API for transcription
+                transcription = self._transcribe_with_google_speech(temp_file_path)
                 return transcription
             finally:
                 # Clean up temporary file
@@ -43,7 +61,7 @@ class SpeechService:
                     os.unlink(temp_file_path)
                     
         except Exception as e:
-            print(f"Error transcribing audio: {str(e)}")
+            logger.error(f"Error transcribing audio: {str(e)}")
             return None
     
     def _download_audio(self, audio_url: str) -> Optional[bytes]:
@@ -52,31 +70,25 @@ class SpeechService:
             response = requests.get(audio_url, timeout=30)
             if response.status_code == 200:
                 return response.content
+            logger.error(f"Failed to download audio: HTTP {response.status_code}")
             return None
         except Exception as e:
-            print(f"Error downloading audio: {str(e)}")
+            logger.error(f"Error downloading audio: {str(e)}")
             return None
     
-    def _transcribe_with_whisper(self, audio_file_path: str) -> Optional[str]:
+    def _transcribe_with_google_speech(self, audio_file_path: str) -> Optional[str]:
         """
-        Transcribe audio using OpenAI Whisper API
+        Transcribe audio using Google Speech-to-Text API
         """
         try:
-            # Initialize OpenAI client
-            openai.api_key = Config.OPENAI_API_KEY
-            client = openai.OpenAI()
+            if not self.google_speech:
+                logger.error("Google Speech service not initialized")
+                return None
             
-            # Open and transcribe the audio file
-            with open(audio_file_path, "rb") as audio_file:
-                transcript = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    language="ar"  # Arabic language
-                )
-                return transcript.text
+            return self.google_speech.transcribe_audio_file(audio_file_path)
             
         except Exception as e:
-            print(f"Error with Whisper transcription: {str(e)}")
+            logger.error(f"Error with Google Speech transcription: {str(e)}")
             return None
     
     def detect_speech_end(self, silence_duration: int = 2) -> bool:
@@ -123,6 +135,59 @@ class SpeechService:
         except Exception as e:
             print(f"Error generating speech: {str(e)}")
             return None, 500
+
+    def transcribe_audio_bytes(self, audio_bytes: bytes) -> Optional[str]:
+        """
+        Transcribe audio bytes directly using Google Speech-to-Text API
+        For real-time streaming audio processing
+        
+        Args:
+            audio_bytes (bytes): Raw audio data from Twilio stream
+            
+        Returns:
+            Optional[str]: Transcribed text or None if failed
+        """
+        try:
+            if not self.google_speech:
+                logger.error("Google Speech service not initialized")
+                return None
+            
+            # Use Google Speech-to-Text for direct bytes transcription
+            return self.google_speech.transcribe_audio_bytes(audio_bytes)
+            
+        except Exception as e:
+            logger.error(f"Error transcribing audio bytes: {str(e)}")
+            return None
+    
+    def create_streaming_session(self, 
+                                on_interim_result=None,
+                                on_final_result=None,
+                                on_error=None):
+        """
+        Create a new real-time streaming session for continuous transcription
+        
+        Args:
+            on_interim_result: Callback for partial results
+            on_final_result: Callback for final results (text, confidence)
+            on_error: Callback for errors
+            
+        Returns:
+            StreamingSession object or None if service not available
+        """
+        try:
+            if not self.google_speech:
+                logger.error("Google Speech service not initialized")
+                return None
+            
+            return self.google_speech.create_streaming_session(
+                on_interim_result=on_interim_result,
+                on_final_result=on_final_result,
+                on_error=on_error
+            )
+            
+        except Exception as e:
+            logger.error(f"Error creating streaming session: {str(e)}")
+            return None
 
 # Global instance
 speech_service = SpeechService()

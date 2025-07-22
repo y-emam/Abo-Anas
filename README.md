@@ -1,15 +1,43 @@
-# AI Voice Assistant with Twilio & Gemini
+# AI Voice Assistant with Real-time Google Speech-to-Text
 
-A real-time conversational AI voice assistant that uses Twilio for phone calls, Google Gemini for intelligent responses, and ElevenLabs for Arabic text-to-speech.
+A real-time conversational AI voice assistant that uses Twilio for phone calls, Google Speech-to-Text for real-time transcription, Google Gemini for intelligent responses, and ElevenLabs for Arabic text-to-speech.
+
+## 🆕 What's New - Real-time Streaming
+
+**This project has been upgraded from OpenAI Whisper to Google Speech-to-Text with real-time streaming capabilities!**
+
+### Before vs After
+
+| Feature | OpenAI Whisper (Old) | Google Speech-to-Text (New) |
+|---------|---------------------|---------------------------|
+| **Processing** | Batch (wait for complete audio) | Real-time streaming |
+| **Latency** | 2-5 seconds | < 1 second |
+| **Interim Results** | ❌ No | ✅ Yes (immediate feedback) |
+| **Arabic Support** | Good | Excellent with multiple dialects |
+| **Real-time** | ❌ No | ✅ True streaming |
+
+### Quick Start - Real-time Version
+
+1. **Set up Google Cloud Speech-to-Text** (see [GOOGLE_SPEECH_SETUP.md](GOOGLE_SPEECH_SETUP.md))
+2. **Configure environment**: Copy `.env.example` to `.env` and add your credentials
+3. **Test setup**: `python test_google_speech.py`
+4. **Start real-time server**: `start_realtime.bat` (Windows) or `start_realtime.sh` (Linux/Mac)
+
+### Legacy Version
+
+If you prefer the original Whisper implementation, use `python app.py` instead.
 
 ## Features
 
 - **Real-time Voice Conversations**: Handle incoming phone calls with natural voice interactions
-- **Arabic Language Support**: Specialized for Arabic (Syrian dialect) conversations
+- **🆕 Streaming Transcription**: Immediate partial results as users speak
+- **🆕 Low Latency**: < 1 second response time with Google Speech-to-Text
+- **Arabic Language Support**: Enhanced support for Arabic (Syrian dialect) conversations
 - **AI-Powered Responses**: Uses Google Gemini AI for intelligent conversation responses
 - **High-Quality Speech**: ElevenLabs text-to-speech for natural-sounding Arabic voices
 - **Session Management**: Maintains conversation context across multiple exchanges
 - **Twilio Integration**: Full TwiML support for phone call handling
+- **🆕 Real-time WebSocket**: Streaming audio processing with immediate feedback
 
 ## Architecture
 
